@@ -5,9 +5,9 @@ from requests_oauthlib import OAuth2Session
 import iot_api_client as iot
 from iot_api_client.rest import ApiException
 from iot_api_client.configuration import Configuration
-import pandas
+import pandas as pd
 
-login = json.load(open("lCredentials.json"))  # load my json credentials files
+login = json.load(open("auth.json"))  # load my json credentials files
 
 def generate_salesforce_token():
     instance_url = login["salesforce_credentials"][0]['instance_url']
@@ -20,8 +20,8 @@ def generate_salesforce_token():
     }
 
     response = requests.post(instance_url + login["salesforce_credentials"][0]['_endpoint'], data=payload)
-    return response.json()  # This is to allow me retrieve my access token.
-
+    data = response.json()  # This is to allow me retrieve my access token.
+    return data['access_token']
 
 def generate_arduino_token():
     client_id = "jJL7xknfC5knAni2qeOZgXJcWMUmgr0D"
@@ -39,12 +39,27 @@ def generate_arduino_token():
     )
     return token.get("access_token")
 
-#Creating an instance of the iot-api-client
 
-#Query the thing information from Arduino Cloud
-def thing_prop():
+def salesforce_describe(sObject):
+    object_name = str
+    domain = f"https://resilient-koala-ddxk97-dev-ed.trailblaze.my.salesforce.com/services/data/v57.0/sobjects/{sObject}/describe"
+    url = f"/services/data/v57.0/sObject/{sObject}/describe"
+    header = {
+        "Authorization" : f"Bearer {generate_salesforce_token()}"
+    }
+
+    resp = requests.get(domain, headers= header)
+    data = resp.json()
+    dataset = pd.DataFrame(data["fields"])
+    print(dataset)
+    dataset.to_csv('account_details.csv')
+
+#print(salesforce_describe("Salesforce_Arduino_integration__c"))
+
+
+
+def thing_values():
     thing_id = "4f3c278f-079d-46b6-b88a-3455f5d428dd"
-    property_id = "778dfb53-36b4-43cd-a13c-59ac56227be7"
 
     url = f"https://api2.arduino.cc/iot/v2/things/{thing_id}/properties"
     header = {
@@ -67,13 +82,33 @@ def thing_prop():
         thing_id = dict_vals['thing_id']
         thing_name = dict_vals['thing_name']
 
-        print(f"Name: {name}", end="\n")
-        print(f'id: {id}', end="\n")
-        print(f'Time Created: {time_created}', end="\n")
-        print(f'Last Value Read: {last_value_read}', end="\n")
-        print(f'Update Method: {update_strategy}', end="\n")
-        print(f'Time Updated: {updated_at}', end="\n")
-        print(f'Thing Name: {thing_name}', end="\n")
-        print(f'Thing ID: {thing_id}', end="\n\n")
+        return name, id, time_created, last_value_read, update_strategy, updated_at, thing_id, thing_name
 
-thing_prop()
+
+
+def salesforce_create_records(sObject):
+    instance_url = instance_url = login["salesforce_credentials"][0]['instance_url']
+    domain = f"{instance_url}/services/data/v57.0/sobjects/{sObject}/"
+
+    name, id, time_created, last_value_read, update_strategy, update_at, thing_id, thing_name = thing_values() #tuple unpacked.
+    header = {
+        "Authorization": f"Bearer {generate_salesforce_token()}",
+        "Content-Type": "application/json"
+    }
+
+    rdata = {
+        "name":name,
+        "device_ID__c": id,
+        "time_created__c": time_created,
+        "last_value_read__c": last_value_read,
+        "update_strategy__c": update_strategy,
+        "time_updated__c": update_at,
+        "thing_id__c": thing_id,
+        "thing_name__c": thing_name
+    }
+
+    resp = requests.post(url=domain, headers=header, json=rdata)
+    data = resp.json()
+    print(data)
+
+print(salesforce_create_records("Salesforce_Arduino_integration__c"))
