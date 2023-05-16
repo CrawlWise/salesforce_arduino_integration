@@ -39,26 +39,12 @@ def generate_arduino_token():
     )
     return token.get("access_token")
 
-
-def salesforce_describe(sObject):
-    object_name = str
-    domain = f"https://resilient-koala-ddxk97-dev-ed.trailblaze.my.salesforce.com/services/data/v57.0/sobjects/{sObject}/describe"
-    url = f"/services/data/v57.0/sObject/{sObject}/describe"
-    header = {
-        "Authorization" : f"Bearer {generate_salesforce_token()}"
-    }
-
-    resp = requests.get(domain, headers= header)
-    data = resp.json()
-    dataset = pd.DataFrame(data["fields"])
-    print(dataset)
-    dataset.to_csv('account_details.csv')
-
-#print(salesforce_describe("Salesforce_Arduino_integration__c"))
-
-
-
+# Generate the all values from of the variables in arduino cloud
 def thing_values():
+    """
+    the thing_values functions return all the keys and values of Arduino thing based on a specific thing id.
+    :return: Thing object ID
+    """
     thing_id = "4f3c278f-079d-46b6-b88a-3455f5d428dd"
 
     url = f"https://api2.arduino.cc/iot/v2/things/{thing_id}/properties"
@@ -68,29 +54,28 @@ def thing_values():
     }
     resp = requests.get(url=url, headers=header)
     data_set = json.loads(resp.text)
-
     #Return the list from this item
     item_counts = len(data_set)
-    for items in range(item_counts):
-        dict_vals = data_set[items]
-        name = dict_vals["name"]
-        id = dict_vals['id']
-        time_created = dict_vals['created_at']
-        last_value_read = dict_vals['last_value']
-        update_strategy = dict_vals['update_strategy']
-        updated_at = dict_vals['updated_at']
-        thing_id = dict_vals['thing_id']
-        thing_name = dict_vals['thing_name']
+    data_values = [data for data in data_set]
+    return data_values
 
-        return name, id, time_created, last_value_read, update_strategy, updated_at, thing_id, thing_name
-
-
-
-def salesforce_create_records(sObject):
+def salesforce_create_records(name, id, time_created, last_value_read, update_strategy, update_at, thing_id, thing_name):
+    """
+    This creates the records on Sobject based on the object name provided on the url. IN other to specify the object you
+    want to modify, update the domain url {sobject} /services/data/v57.0/sobjects/{sobject}/" to the name of the update
+    you want to create records.
+    :param name: required
+    :param id: required. This is a unique field in the Sobject bucket
+    :param time_created:
+    :param last_value_read:
+    :param update_strategy:
+    :param update_at:
+    :param thing_id:
+    :param thing_name:
+    :return:
+    """
     instance_url = instance_url = login["salesforce_credentials"][0]['instance_url']
-    domain = f"{instance_url}/services/data/v57.0/sobjects/{sObject}/"
-
-    name, id, time_created, last_value_read, update_strategy, update_at, thing_id, thing_name = thing_values() #tuple unpacked.
+    domain = f"{instance_url}/services/data/v57.0/sobjects/Salesforce_Arduino_integration__c/"
     header = {
         "Authorization": f"Bearer {generate_salesforce_token()}",
         "Content-Type": "application/json"
@@ -110,5 +95,15 @@ def salesforce_create_records(sObject):
     resp = requests.post(url=domain, headers=header, json=rdata)
     data = resp.json()
     print(data)
+    for x in thing_values():
+        # key_values = ['name','id','time_created','last_value', 'update_strategy','update_at', 'thing_id','thing_name']
+        name = x['name']
+        id = x['id']
+        time_created = x['created_at']
+        last_value = x['last_value']
+        update_strategy = x['update_strategy']
+        update_at = x['updated_at']
+        thing_id = x['thing_id']
+        thing_name = x['thing_name']
 
-print(salesforce_create_records("Salesforce_Arduino_integration__c"))
+        salesforce_create_records(name, id, time_created, last_value, update_strategy, update_at, thing_id, thing_name)
