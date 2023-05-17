@@ -4,7 +4,7 @@ import requests
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 
-
+# Class of Arduino  integration with salesforce
 class ArduinoToSalesforceIntegration:
     # Load my json file
     login = json.load(open("auth.json"))
@@ -73,6 +73,7 @@ class ArduinoToSalesforceIntegration:
             "Content-Type": "application/json"
         }
         # Generating the values of Arduino thing into salesforce
+        Arduino_Salesforce = ArduinoToSalesforceIntegration()
         arduino_values = Arduino_Salesforce.generate_values_from_arduino_cloud()
 
         # Creating a post body header to send content to Salesforce cloud
@@ -93,8 +94,41 @@ class ArduinoToSalesforceIntegration:
         data = resp.json()
         return data.stat
 
+    #create the arduino update function
+    def update_salesforce_object(self, sobject, record_id):
 
-Arduino_Salesforce = ArduinoToSalesforceIntegration()
-print(Arduino_Salesforce.salesforce_create_records())
+        #record_id_int = int(record_id)
+        instance_url = self.login["salesforce_credentials"][0]['instance_url']
+        domain = f"{instance_url}/services/data/v57.0/sobjects/Salesforce_Arduino_IoT_Integration__c/{record_id}"
+        header = {
+            "Authorization": f"Bearer {self.generate_salesforce_token()}",
+            "Content-Type": "application/json"
+        }
+
+        arduino_Salesforce = ArduinoToSalesforceIntegration()
+        arduino_values = arduino_Salesforce.generate_values_from_arduino_cloud()
+        rdata = {
+            "Battery_Percen__c": arduino_values[7]["last_value"],
+            "Energy__c": arduino_values[0]["last_value"],
+            "Input_Current__c": arduino_values[1]["last_value"],
+            "Input_Power__c": arduino_values[2]["last_value"],
+            "Input_Voltage__c": arduino_values[6]["last_value"],
+            "Output_current__c": arduino_values[4]["last_value"],
+            "Output_Power__c": arduino_values[5]["last_value"],
+            "Output_Voltage__c": arduino_values[6]["last_value"],
+            "Switch__c": arduino_values[8]["last_value"]
+        }
+
+        resp = requests.patch(url= domain, headers= header, data=json.dumps(rdata))
+        data = resp.status_code
+        if data == 204:
+            print("data updated successfully")
+        else:
+            print("Data not updated.")
+
+Arduino1_Salesforce = ArduinoToSalesforceIntegration()
+#print(Arduino_Salesforce.salesforce_create_records())
 #print(Arduino_Salesforce.generate_salesforce_token())
+#print(Arduino1_Salesforce.update_salesforce_object("Salesforce_Arduino_IoT_Integration__c", "a018d00000N53b2"))
+
 
