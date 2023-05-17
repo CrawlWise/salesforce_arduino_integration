@@ -4,7 +4,7 @@ import requests
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 
-
+# Class of Arduino  integration with salesforce
 class ArduinoToSalesforceIntegration:
     # Load my json file
     login = json.load(open("auth.json"))
@@ -94,7 +94,7 @@ class ArduinoToSalesforceIntegration:
         return data.stat
 
 
-Arduino_Salesforce = ArduinoToSalesforceIntegration()
-print(Arduino_Salesforce.salesforce_create_records())
+#Arduino_Salesforce = ArduinoToSalesforceIntegration()
+#print(Arduino_Salesforce.salesforce_create_records())
 #print(Arduino_Salesforce.generate_salesforce_token())
 
