@@ -79,6 +79,8 @@ class ArduinoToSalesforceIntegration:
         arduino_values = Arduino_Salesforce.generate_values_from_arduino_cloud()
 
         # Creating a post body header to send content to Salesforce cloud
+        # The key names are the same as the fields names in Salesforce and the value are gotten
+        # from line 78. Calling the method inside our class
         rdata = {
             "Battery_Percen__c": arduino_values[7]["last_value"],
             "Device_ID__c": "4f3c278f-079d-46b6-b88a-3455f5d428dd",
@@ -91,7 +93,7 @@ class ArduinoToSalesforceIntegration:
             "Output_Voltage__c": arduino_values[6]["last_value"],
             "Switch__c": arduino_values[8]["last_value"]
         }
-
+        # Sending the post request to Salesforce cloud
         resp = requests.post(url=domain, headers=header, json=rdata)
         data = resp.json()
         return data
@@ -99,7 +101,7 @@ class ArduinoToSalesforceIntegration:
     #create the arduino update function
     def update_salesforce_object(self, sobject, record_id):
 
-        #record_id_int = int(record_id)
+        # Generate my instan
         instance_url = self.login["salesforce_credentials"][0]['instance_url']
         domain = f"{instance_url}/services/data/v57.0/sobjects/Salesforce_Arduino_IoT_Integration__c/{record_id}"
         header = {
@@ -136,17 +138,20 @@ Arduino1_Salesforce = ArduinoToSalesforceIntegration()
 
 # Calling my instance class of create record
 create_record = ArduinoToSalesforceIntegration()
+
+# the while loop will keep running but only create a new data on salesforce when the switce value is set to true
+# This is because when the switch value is off, no data on the arduino cloud will be updated.
 while True:
     watcher = ArduinoToSalesforceIntegration()
     watcher_signal = watcher.generate_values_from_arduino_cloud()[8]['last_value']
     print("print im looping")
-    if watcher_signal == False:
+    if watcher_signal == True: # keep running and create object every 1 min once the data is set to true
         print("Salesforce will be updated every 5 minutes")
         create_record.salesforce_create_records()
 
         #starting my timer now
-        time.sleep(300)
-        if watcher_signal == True:
+        time.sleep(60)
+        if watcher_signal == False: # Return back to the while function body when data is set to fals
             print("Returning back to main loop")
             break
 
