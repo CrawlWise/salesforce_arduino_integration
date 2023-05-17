@@ -1,5 +1,7 @@
 #bimport the modules below by using navigating to the code folder and doing pip install <module name>
 import json
+import time
+
 import requests
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
@@ -92,7 +94,7 @@ class ArduinoToSalesforceIntegration:
 
         resp = requests.post(url=domain, headers=header, json=rdata)
         data = resp.json()
-        return data.stat
+        return data
 
     #create the arduino update function
     def update_salesforce_object(self, sobject, record_id):
@@ -130,5 +132,22 @@ Arduino1_Salesforce = ArduinoToSalesforceIntegration()
 #print(Arduino_Salesforce.salesforce_create_records())
 #print(Arduino_Salesforce.generate_salesforce_token())
 #print(Arduino1_Salesforce.update_salesforce_object("Salesforce_Arduino_IoT_Integration__c", "a018d00000N53b2"))
+
+
+# Calling my instance class of create record
+create_record = ArduinoToSalesforceIntegration()
+while True:
+    watcher = ArduinoToSalesforceIntegration()
+    watcher_signal = watcher.generate_values_from_arduino_cloud()[8]['last_value']
+    print("print im looping")
+    if watcher_signal == False:
+        print("Salesforce will be updated every 5 minutes")
+        create_record.salesforce_create_records()
+
+        #starting my timer now
+        time.sleep(300)
+        if watcher_signal == True:
+            print("Returning back to main loop")
+            break
 
 
