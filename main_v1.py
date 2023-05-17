@@ -145,13 +145,13 @@ while True:
     watcher = ArduinoToSalesforceIntegration()
     watcher_signal = watcher.generate_values_from_arduino_cloud()[8]['last_value']
     print("print im looping")
-    if watcher_signal == False:
+    if watcher_signal == True: # keep running and create object every 1 min once the data is set to true
         print("Salesforce will be updated every 5 minutes")
         create_record.salesforce_create_records()
 
         #starting my timer now
-        time.sleep(300)
-        if watcher_signal == True:
+        time.sleep(60)
+        if watcher_signal == False: # Return back to the while function body when data is set to fals
             print("Returning back to main loop")
             break
 
