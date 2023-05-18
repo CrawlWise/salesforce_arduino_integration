@@ -141,18 +141,26 @@ create_record = ArduinoToSalesforceIntegration()
 
 # the while loop will keep running but only create a new data on salesforce when the switce value is set to true
 # This is because when the switch value is off, no data on the arduino cloud will be updated.
+
 while True:
     watcher = ArduinoToSalesforceIntegration()
     watcher_signal = watcher.generate_values_from_arduino_cloud()[8]['last_value']
-    print("print im looping")
-    if watcher_signal == True: # keep running and create object every 1 min once the data is set to true
-        print("Salesforce will be updated every 5 minutes")
+    print("Checking Signal Switch...")
+
+    if watcher_signal == True:
+        print("Salesforce will be updated every 1 minutes")
         create_record.salesforce_create_records()
 
-        #starting my timer now
-        time.sleep(60)
-        if watcher_signal == False: # Return back to the while function body when data is set to fals
+        # keep running and create object every 1 min once the data is set to true
+        time.sleep(15)
+
+    # Confirming the status of the switch to catch the last value.
+        watcher = ArduinoToSalesforceIntegration()
+        confirmed_status=watcher.generate_values_from_arduino_cloud()[8]['last_value']
+
+        if confirmed_status == False: # Return back to the while function body when data is set to false
+            # Update the last record status false
+            create_record.salesforce_create_records()
             print("Returning back to main loop")
-            break
 
 
